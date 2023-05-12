@@ -16,9 +16,8 @@ def migratePush(setting, template):
         'serverChan', 'pushPlus', 'CoolPush', 'WeCom', 'Telegram',
     ]
 
-    if 'CoolPush' in setting:
-        if 'method' in setting['CoolPush']:
-            setting['CoolPush']['method'] = setting['CoolPush']['method'][0]
+    if 'CoolPush' in setting and 'method' in setting['CoolPush']:
+        setting['CoolPush']['method'] = setting['CoolPush']['method'][0]
 
     for key in keys:
         if key in setting and key in template['push']:
@@ -77,9 +76,8 @@ def before(src, dst):
     for key in key_list:
         if key in dst:
             src[key] = dst[key]
-        else:
-            if key in src:
-                del src[key]
+        elif key in src:
+            del src[key]
 
 
 with open(sys.argv[1], 'r', encoding='utf-8') as f:

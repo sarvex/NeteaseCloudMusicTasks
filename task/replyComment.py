@@ -9,23 +9,18 @@ def start(user, task={}):
     if len(user.comments) > 0:
         commentId = user.comments[0]['commentId']
         songId = user.comments[0]['songId']
+    elif len(task['id']) > 0:
+        # 发布主创说
+        publishComment.start(user, user.user_setting['musician_task']['755000'])
     else:
-        if len(task['id']) > 0:
-            # 发布主创说
-            publishComment.start(user, user.user_setting['musician_task']['755000'])
-        else:
-            return
+        return
     time.sleep(5)
-    if len(user.comments) > 0:
-        commentId = user.comments[0]['commentId']
-        songId = user.comments[0]['songId']
-    else:
+    if len(user.comments) <= 0:
         return user.taskInfo(task['taskName'] + '-发布评论', '发布失败')
 
-    if len(task['msg']) > 0:
-        msg = random.choice(task['msg'])
-    else:
-        msg = '感谢收听'
+    commentId = user.comments[0]['commentId']
+    songId = user.comments[0]['songId']
+    msg = random.choice(task['msg']) if len(task['msg']) > 0 else '感谢收听'
     resp = music.comments_reply(
         songId, commentId, msg)
     if resp['code'] == 200:

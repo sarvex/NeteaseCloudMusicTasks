@@ -2,14 +2,10 @@ import random
 
 
 def start(user, task={}):
-    music = user.music
-
     if len(task['id']) > 0 and len(user.comments) == 0:
         songId = random.choice(task['id'])
-        if len(task['msg']) > 0:
-            msg = random.choice(task['msg'])
-        else:
-            msg = '感谢大家收听'
+        msg = random.choice(task['msg']) if len(task['msg']) > 0 else '感谢大家收听'
+        music = user.music
 
         resp = music.comments_add(songId, msg)
         if resp['code'] == 200:

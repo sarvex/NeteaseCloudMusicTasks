@@ -87,10 +87,9 @@ def start(event={}, context={}):
                 'config': push
             }
             pusher.append(data)
-        saved_environs.update(user.saved_environs)
-    if len(saved_environs) > 0:
-        res = append_environ(saved_environs)
-        if res:
+        saved_environs |= user.saved_environs
+    if saved_environs:
+        if res := append_environ(saved_environs):
             print('已成功保存环境变量')
         else:
             print('环境变量保存失败')
@@ -127,12 +126,9 @@ def setSongNumber():
                 listenSongs = user.listenSongs
             # if user_setting['daka']['full_stop'] == True and (resp['level'] == 10 or resp['listenSongs'] >= 20000):
             #     continue
-            songNumber += str(user.uid) + ":" + str(listenSongs) + ";"
+            songNumber += f"{str(user.uid)}:{str(listenSongs)};"
             timer_enable = True
         time.sleep(2)
-    if not timer_enable:
-        # TODO
-        pass
     if len(songNumber) == 0:
         songNumber = "-1"
     if lastSongNumber == "-1" and songNumber == "-1":
@@ -140,8 +136,7 @@ def setSongNumber():
     songNumber = time.strftime(
         "%Y-%m-%d", time.gmtime(time.time()+28800)) + "#" + songNumber
 
-    res = append_environ({"SONG_NUMBER": songNumber})
-    if res:
+    if res := append_environ({"SONG_NUMBER": songNumber}):
         print("已更新歌曲播放数量")
     else:
         print("播放量更新失败")

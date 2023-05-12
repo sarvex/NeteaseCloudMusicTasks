@@ -2,7 +2,7 @@ import os
 
 for file in os.listdir(os.path.join(os.path.dirname(__file__), 'push')):
     if not file.startswith('_') and file.endswith('py'):
-        exec('from push import {}'.format(file.replace('.py', '')))
+        exec(f"from push import {file.replace('.py', '')}")
 
 
 class Pusher():
@@ -17,12 +17,13 @@ class Pusher():
             return
         # 是否合并推送
         if not config['merge']:
-            exec('{}.push(data["title"], data["mdmsg"], data["mdmsg_compat"], data["textmsg"], config)'.format(
-                config['module']))
+            exec(
+                f"""{config['module']}.push(data["title"], data["mdmsg"], data["mdmsg_compat"], data["textmsg"], config)"""
+            )
             return
 
         # 配置相同才会合并推送
-        key = eval('{}.getKey(data)'.format(config['module']))
+        key = eval(f"{config['module']}.getKey(data)")
         if key is not None:
             if key in self.datas:
                 for syntax in ['mdmsg', 'mdmsg_compat', 'textmsg']:
@@ -33,5 +34,6 @@ class Pusher():
 
     def push(self):
         for data in self.datas.values():
-            exec('{}.push(data["title"], data["mdmsg"], data["mdmsg_compat"], data["textmsg"], data["config"])'.format(
-                data['config']['module']))
+            exec(
+                f"""{data['config']['module']}.push(data["title"], data["mdmsg"], data["mdmsg_compat"], data["textmsg"], data["config"])"""
+            )

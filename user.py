@@ -52,13 +52,10 @@ class User(object):
             self.uid = self.music.uid
             self.userType = self.music.userType
         else:
-            if len(self.music.loginerror) > 0:
-                msg = self.music.loginerror
-            else:
-                msg = '可能是网络或其他原因'
+            msg = self.music.loginerror if len(self.music.loginerror) > 0 else '可能是网络或其他原因'
             self.title += ': 登录失败'
             self.taskTitle('用户信息')
-            self.taskInfo('登录失败，' + msg)
+            self.taskInfo(f'登录失败，{msg}')
             self.finishTask()
 
     def login_check(self, username, pwd='', countrycode='', ip=''):
@@ -74,7 +71,7 @@ class User(object):
                     t = c.split(':')
                     if len(t) == 2:
                         cookies[t[0]] = t[1]
-                if len(cookies) > 0:
+                if cookies:
                     music.session = requests.Session()
                     cookies['__remember_me'] = 'true'
                     requests.utils.add_dict_to_cookiejar(
@@ -87,7 +84,7 @@ class User(object):
             self.listenSongs = user_resp['listenSongs']
             music.nickname = user_resp['profile']['nickname']
             music.userType = user_resp['profile']['userType']
-            if music.userType != 0 and music.userType != 4:
+            if music.userType not in [0, 4]:
                 for authtype in user_resp['profile'].get('allAuthTypes', []):
                     if authtype['type'] == 4:
                         music.userType = 4
@@ -100,14 +97,14 @@ class User(object):
                 return music
             login_resp = music.login(username, pwd, countrycode)
             if login_resp['code'] == 200:
-                print('已通过账号密码登录')                
+                print('已通过账号密码登录')
                 if self.runtime == 'tencent-scf':
                     music_cookie = ''
                     for cookie in music.session.cookies:
                         if cookie.name == 'MUSIC_U':
-                            music_cookie += 'MUSIC_U:' + cookie.value + ';'
+                            music_cookie += f'MUSIC_U:{cookie.value};'
                         elif cookie.name == '__csrf':
-                            music_cookie += '__csrf:' + cookie.value + ';'
+                            music_cookie += f'__csrf:{cookie.value};'
 
                     self.saved_environs['COOKIE_' + re.sub('[^a-zA-Z0-9]', '_', username)] = music_cookie
 
@@ -115,7 +112,7 @@ class User(object):
                 music.nickname = login_resp['profile']['nickname']
                 music.userType = login_resp['profile']['userType']
                 music.loginerror = ''
-                if music.userType != 0 and music.userType != 4:
+                if music.userType not in [0, 4]:
                     user_resp = music.user_detail(music.uid)
                     for authtype in user_resp['profile'].get('allAuthTypes', []):
                         if authtype['type'] == 4:
@@ -132,7 +129,7 @@ class User(object):
         return music
 
     def taskTitle(self, title):
-        msg = '**{}**\n'.format(title)
+        msg = f'**{title}**\n'
         self.msg += msg + '\n'
         print(msg)
     def taskInfo(self, key, value='', useCodeblock = True):
@@ -207,26 +204,24 @@ class User(object):
         self.taskTitle('打卡信息')
         user_setting = self.user_setting
 
-        if user_setting['daka']['full_stop']:
-            if self.full:
+        if self.full:
+            if user_setting['daka']['full_stop']:
                 self.taskInfo('打卡', '您的等级已经爆表了，无需再打卡')
                 self.finishTask()
                 return
-            elif self.songFull:
+        elif self.songFull:
+            if user_setting['daka']['full_stop']:
                 self.taskInfo('打卡', '距离满级只差登录天数，无需打卡')
                 self.finishTask()
                 return
-        print("获取到歌曲数:" + str(self.songnumber))
-        daka_number = 0
-
+        print(f"获取到歌曲数:{str(self.songnumber)}")
         total = 300 - (self.listenSongs - self.songnumber)
         if total == 0:
             self.taskInfo('打卡', '今天300首歌已经刷满了')
             self.finishTask()
             return
         if total <= user_setting['daka']['tolerance']:
-            self.taskInfo('打卡', '今天已经打卡' +
-                          str(self.listenSongs - self.songnumber)+"首歌了")
+            self.taskInfo('打卡', f'今天已经打卡{str(self.listenSongs - self.songnumber)}首歌了')
             self.finishTask()
             return
         playlists = self.music.personalized_playlist(limit=50)
@@ -240,7 +235,9 @@ class User(object):
         idx = 0
         start = idx
         total = self.resize(total)
-        for c in range(6):
+        num = 300
+        daka_number = 0
+        for _ in range(6):
             if len(song_datas) < total:
                 for i in range(start, len(playlist_ids)):
                     idx = i
@@ -265,48 +262,57 @@ class User(object):
                         }
                         song_datas.append(song_data)
                     if len(song_datas) >= total:
-                        song_datas = song_datas[0:total]
+                        song_datas = song_datas[:total]
                         break
-            num = 300
-            print("即将打卡"+str(total)+"首")
-            self.music.daka(song_datas[0:total])
+            print(f"即将打卡{str(total)}首")
+            self.music.daka(song_datas[:total])
             daka_number += total
             song_datas = song_datas[total:]
             # time.sleep(user_setting['daka']['sleep_time'])
             time.sleep(30)
             resp = self.music.user_detail(self.uid)
             if 300 - (resp['listenSongs'] - self.songnumber) <= user_setting['daka']['tolerance']:
-                self.title = self.title + '今天听歌' + \
-                    str(resp['listenSongs']-self.songnumber) + \
-                    '首，累计听歌'+str(resp['listenSongs'])+'首'
-                self.taskInfo("本次实际打卡数", str(daka_number) + '首')
+                self.title = (
+                    f'{self.title}今天听歌'
+                    + str(resp['listenSongs'] - self.songnumber)
+                    + '首，累计听歌'
+                    + str(resp['listenSongs'])
+                    + '首'
+                )
+                self.taskInfo("本次实际打卡数", f'{str(daka_number)}首')
                 self.taskInfo('今天有效打卡数', str(
                     resp['listenSongs'] - self.songnumber) + '首')
                 self.taskInfo('听歌总数', str(resp['listenSongs']) + '首')
                 if resp['listenSongs'] - self.songnumber < 300:
                     self.taskInfo(
-                        '温馨提示', '数据更新可能有延时，[点击查看最新数据](https://music.163.com/#/user/home?id='+str(self.uid)+')', useCodeblock=False)
+                        '温馨提示',
+                        f'数据更新可能有延时，[点击查看最新数据](https://music.163.com/#/user/home?id={str(self.uid)})',
+                        useCodeblock=False,
+                    )
                 return
             else:
                 total = 300 - (resp['listenSongs'] - self.songnumber)
                 total = self.resize(total)
-                if len(song_datas) >= total:
-                    start = idx
-                else:
-                    start = idx + 1
-
+                start = idx if len(song_datas) >= total else idx + 1
         time.sleep(15)
         resp = self.music.user_detail(self.uid)
-        self.title = self.title + '今天听歌' + \
-            str(resp['listenSongs']-self.songnumber) + \
-            '首，累计听歌'+str(resp['listenSongs'])+'首'
-        self.taskInfo("本次实际打卡数", str(daka_number) + '首')
+        self.title = (
+            f'{self.title}今天听歌'
+            + str(resp['listenSongs'] - self.songnumber)
+            + '首，累计听歌'
+            + str(resp['listenSongs'])
+            + '首'
+        )
+        self.taskInfo("本次实际打卡数", f'{str(daka_number)}首')
         self.taskInfo('今天有效打卡数', str(
             resp['listenSongs'] - self.songnumber) + '首')
         self.taskInfo('听歌总数', str(resp['listenSongs']) + '首')
         if resp['listenSongs'] - self.songnumber < 300:
             self.taskInfo(
-                '温馨提示', '数据更新可能有延时，[点击查看最新数据](https://music.163.com/#/user/home?id='+str(self.uid)+')', useCodeblock=False)
+                '温馨提示',
+                f'数据更新可能有延时，[点击查看最新数据](https://music.163.com/#/user/home?id={str(self.uid)})',
+                useCodeblock=False,
+            )
         self.finishTask()
 
     def daka(self):

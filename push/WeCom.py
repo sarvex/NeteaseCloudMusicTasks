@@ -20,24 +20,20 @@ def get_token(corpid, corpsecret):
     data = json.loads(req.text)
     if data["errcode"] == 0:
         return data["access_token"]
-    else:
-        print("企业微信access_token获取失败: " + str(data))
-        return None
+    print(f"企业微信access_token获取失败: {str(data)}")
+    return None
 
 
 def push(title, mdmsg, mdmsg_compat, textmsg, config):    
     msgtype = config['msgtype']
-    if msgtype == 'markdown':
-        msg = mdmsg
-    else:
-        msg = textmsg
+    msg = mdmsg if msgtype == 'markdown' else textmsg
     if len(config['corpid']) == 0 or len(config['agentid']) == 0 or len(config['secret']) == 0:
         return
 
     token = get_token(config['corpid'], config['secret'])
     if token is None:
         return
-    url = "https://qyapi.weixin.qq.com/cgi-bin/message/send?access_token=" + token
+    url = f"https://qyapi.weixin.qq.com/cgi-bin/message/send?access_token={token}"
 
     values = {
         "touser": config['userid'],
@@ -64,4 +60,4 @@ def push(title, mdmsg, mdmsg_compat, textmsg, config):
     resp = requests.post(url, json=values)
     data = json.loads(resp.text)
     if data["errcode"] != 0:
-        print("企业微信消息发送失败: "+str(data))
+        print(f"企业微信消息发送失败: {str(data)}")

@@ -28,7 +28,7 @@ class NetEase(object):
         username = str(username)
         self.username = username
         self.session = requests.Session()
-        if len(username) == 0:
+        if not username:
             return
         cookie_file = self.get_cookie_file(username)
         if len(cookie_file) > 0:
@@ -95,12 +95,15 @@ class NetEase(object):
         )
 
     def request(self, method, path, params={}, base_url=BASE_URL, default={"code": -1}, custom_cookies={'os': 'pc'}):
-        endpoint = "{}{}".format(BASE_URL, path)
-        csrf_token = ""
-        for cookie in self.session.cookies:
-            if cookie.name == "__csrf":
-                csrf_token = cookie.value
-                break
+        endpoint = f"{BASE_URL}{path}"
+        csrf_token = next(
+            (
+                cookie.value
+                for cookie in self.session.cookies
+                if cookie.name == "__csrf"
+            ),
+            "",
+        )
         params.update({"csrf_token": csrf_token})
         data = default
 
@@ -118,21 +121,20 @@ class NetEase(object):
         except requests.exceptions.RequestException as e:
             print(e)
         except ValueError as e:
-            print("Path: {}, response: {}".format(path, resp.text[:200]))
+            print(f"Path: {path}, response: {resp.text[:200]}")
         finally:
             return data
 
     def login(self, username, password, countrycode='86'):
         username = str(username)
         cookie_file = self.get_cookie_file(username)
-        if len(cookie_file) > 0:
-            if self.username != username:
-                cookie_jar = LWPCookieJar(cookie_file)
-                cookie_jar.load()
-                self.session.cookies = cookie_jar
-                self.session.cookies.load()
-                # self.session.cookies.save()
-                self.username = username
+        if len(cookie_file) > 0 and self.username != username:
+            cookie_jar = LWPCookieJar(cookie_file)
+            cookie_jar.load()
+            self.session.cookies = cookie_jar
+            self.session.cookies.load()
+            # self.session.cookies.save()
+            self.username = username
         if len(password) < 32:
             password = md5(password.encode(encoding='UTF-8')).hexdigest()
         if username.isdigit():
@@ -222,7 +224,7 @@ class NetEase(object):
 
     # 专辑详情
     def album(self, album_id):
-        path = "/weapi/v1/album/{}".format(album_id)
+        path = f"/weapi/v1/album/{album_id}"
         return self.request("POST", path)  # .get("songs", [])
 
     # 歌曲详情
@@ -234,7 +236,7 @@ class NetEase(object):
 
     # 关注用户
     def user_follow(self, id):
-        path = "/weapi/user/follow/{}".format(id)
+        path = f"/weapi/user/follow/{id}"
         return self.request("POST", path)
 
     # 听歌排行 type: 0 全部时间 1最近一周
@@ -265,7 +267,7 @@ class NetEase(object):
 
     # 用户信息
     def user_detail(self, uid):
-        path = "/weapi/v1/user/detail/{}".format(uid)
+        path = f"/weapi/v1/user/detail/{uid}"
         return self.request("POST", path)
 
     def user_level(self):
@@ -318,9 +320,8 @@ class NetEase(object):
         path = '/weapi/nmusician/workbench/mission/cycle/list'
         if actionType == '' and platform == '':
             return self.request("POST", path)
-        else:
-            params = dict(actionType=actionType, platform=platform)
-            return self.request("POST", path, params)
+        params = dict(actionType=actionType, platform=platform)
+        return self.request("POST", path, params)
 
     # 获取任务
     def mission_stage_get(self):
@@ -350,20 +351,21 @@ class NetEase(object):
     # 对歌曲进行评论
     def comments_add(self, song_id, content):
         path = "/weapi/v1/resource/comments/add"
-        params = dict(threadId='R_SO_4_'+str(song_id), content=content)
+        params = dict(threadId=f'R_SO_4_{str(song_id)}', content=content)
         return self.request("POST", path, params, custom_cookies={'os': 'android'})
 
     # 回复歌曲评论
     def comments_reply(self, song_id, commentId, content):
+        params = dict(
+            commentId=commentId, threadId=f'R_SO_4_{str(song_id)}', content=content
+        )
         path = "/weapi/v1/resource/comments/reply"
-        params = dict(commentId=commentId, threadId='R_SO_4_' +
-                      str(song_id), content=content)
         return self.request("POST", path, params, custom_cookies={'os': 'android'})
 
     # 删除评论
     def comments_delete(self, song_id, commentId):
         path = "/weapi/resource/comments/delete"
-        params = dict(commentId=commentId, threadId='R_SO_4_'+str(song_id))
+        params = dict(commentId=commentId, threadId=f'R_SO_4_{str(song_id)}')
         return self.request("POST", path, params)
 
     # 发送私信
@@ -423,9 +425,9 @@ class NetEase(object):
 
     def mlog_nos_token(self, filepath):
         path = "/weapi/nos/token/whalealloc"
-        bizKey = ''
-        for i in range(8):
-            bizKey += hex(random.randint(0, 15)).replace('0x', '')
+        bizKey = ''.join(
+            hex(random.randint(0, 15)).replace('0x', '') for _ in range(8)
+        )
         _, filename = os.path.split(filepath)
         with open(filepath, 'rb') as f:
             contents = f.read()
@@ -442,8 +444,7 @@ class NetEase(object):
 
     def upload_file(self, filepath, token):
         data = token['data']
-        path = "http://45.127.129.8/{}/{}?offset=0&complete=true&version=1.0".format(
-            data['bucket'], data['objectKey'])
+        path = f"http://45.127.129.8/{data['bucket']}/{data['objectKey']}?offset=0&complete=true&version=1.0"
         content_type = ''
         if filepath.endswith('jpg'):
             content_type = 'image/jpeg'
@@ -495,7 +496,7 @@ class NetEase(object):
 
     # 获取歌曲评论
     def song_comments(self, music_id, offset=0, total="false", limit=100):
-        path = "/weapi/v1/resource/comments/R_SO_4_{}/".format(music_id)
+        path = f"/weapi/v1/resource/comments/R_SO_4_{music_id}/"
         params = dict(rid=music_id, offset=offset, total=total, limit=limit)
         return self.request("POST", path, params)
 

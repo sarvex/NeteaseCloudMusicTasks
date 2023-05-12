@@ -18,7 +18,7 @@ def start(user, task={}):
             for prize in stat['prizes']:
                 if prize['obtained'] == True and prize['progress'] == currentProgress:
                     totalYunbei += prize['amount']
-        user.taskInfo('重复签到', '今天签到共获取' + str(totalYunbei) + '云贝')
+        user.taskInfo('重复签到', f'今天签到共获取{str(totalYunbei)}云贝')
 
     music.daily_task()
     time.sleep(1)

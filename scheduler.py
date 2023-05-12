@@ -10,8 +10,7 @@ if __name__ == "__main__":
             "SCHEDULER_HOUR", random.randint(0, 23))
         scheduler_minute = os.environ.get(
             "SCHEDULER_MINUTE", random.randint(0, 59))
-        print("Scheduler hour: %s, minute: %s" %
-              (scheduler_hour, scheduler_minute))
+        print(f"Scheduler hour: {scheduler_hour}, minute: {scheduler_minute}")
         scheduler = BlockingScheduler(timezone='Asia/Shanghai')
         scheduler.add_job(start, 'cron', hour=scheduler_hour,
                           minute=scheduler_minute)

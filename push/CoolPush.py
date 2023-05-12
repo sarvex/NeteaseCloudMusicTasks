@@ -16,7 +16,7 @@ def push(title, mdmsg, mdmsg_compat, textmsg, config):
     if len(skey) == 0 or len(method) == 0:
         return
 
-    CoolPush_url = "https://push.xuthus.cc/{}/{}".format(method, skey)
+    CoolPush_url = f"https://push.xuthus.cc/{method}/{skey}"
     if method == "email":
         requests.post(CoolPush_url, data={"t": title, "c": msg})
     else:

@@ -14,17 +14,11 @@ def updateConfig(src, dst):
     elif isinstance(src, list):
         if len(src) == 0:
             target = src
+        elif len(target) != 0 and isinstance(src[0], dict):
+            t = target[0]
+            target = [updateConfig(item, t) for item in src]
         else:
-            if len(target) == 0:
-                target = copy.deepcopy(src)
-            else:
-                if isinstance(src[0], dict):
-                    t = target[0]
-                    target = []
-                    for item in src:
-                        target.append(updateConfig(item, t))
-                else:
-                    target = copy.deepcopy(src)
+            target = copy.deepcopy(src)
     else:
         target = copy.deepcopy(src)
     return target
@@ -38,19 +32,14 @@ def append_environ(vars):
     if 'TENCENT_SECRET_ID' not in os.environ or 'TENCENT_SECRET_KEY' not in os.environ:
         print('环境变量 TENCENT_SECRET_ID 或 TENCENT_SECRET_KEY 不存在。项目地址: https://github.com/chen310/NeteaseCloudMusicTasks')
         return False
-    kv = {}
     keylist = ["TENCENT_SECRET_ID", "TENCENT_SECRET_KEY", "SONG_NUMBER"]
-    for key in os.environ:
-        if key in keylist:
-            kv[key] = os.environ.get(key)
-        elif 'COOKIE' in key:
-            kv[key] = os.environ.get(key)
-
-    kv.update(vars)
-    Variables = []
-    for key in kv:
-        Variables.append({"Key": key, "Value": kv[key]})
-
+    kv = {
+        key: os.environ.get(key)
+        for key in os.environ
+        if key in keylist or 'COOKIE' in key
+    }
+    kv |= vars
+    Variables = [{"Key": key, "Value": value} for key, value in kv.items()]
     from tencentcloud.common import credential
     from tencentcloud.common.profile.client_profile import ClientProfile
     from tencentcloud.common.profile.http_profile import HttpProfile

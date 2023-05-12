@@ -13,6 +13,6 @@ def start(user, task={}):
     reason = random.choice(task['reason'])
     resp = music.yunbei_rcmd_submit(songId, yunbeiNum, reason)
     if resp['code'] == 200:
-        user.taskInfo(task['taskName'], '推歌成功，歌曲ID为'+str(songId))
+        user.taskInfo(task['taskName'], f'推歌成功，歌曲ID为{str(songId)}')
     else:
-        user.taskInfo(task['taskName'], '歌曲' + str(songId) + '推歌失败:' + user.errMsg(resp))
+        user.taskInfo(task['taskName'], f'歌曲{str(songId)}推歌失败:{user.errMsg(resp)}')

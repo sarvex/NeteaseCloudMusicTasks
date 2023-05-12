@@ -34,7 +34,7 @@ def start(user, task={}):
 
     filepath = os.path.join(path, 'album.jpg')
     size = task.get('size', 500)
-    url += '?param='+str(size)+'y'+str(size)
+    url += f'?param={str(size)}y{str(size)}'
 
     r = requests.get(url)
     with open(filepath, 'wb') as f:

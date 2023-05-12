@@ -4,9 +4,7 @@ import requests
 
 def getKey(data):
     config = data['config']
-    if len(config['KEY']) == 0:
-        return None
-    return (config['module'], config['KEY'])
+    return None if len(config['KEY']) == 0 else (config['module'], config['KEY'])
 
 
 def push(title, mdmsg, mdmsg_compat, textmsg, config):
@@ -16,8 +14,8 @@ def push(title, mdmsg, mdmsg_compat, textmsg, config):
         return
 
     if key.startswith('SCT'):
-        url = 'https://sctapi.ftqq.com/' + key + '.send'
+        url = f'https://sctapi.ftqq.com/{key}.send'
     else:
-        url = 'https://sc.ftqq.com/' + key + '.send'
+        url = f'https://sc.ftqq.com/{key}.send'
 
     requests.post(url, data={"text": title, "desp": msg})

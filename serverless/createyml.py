@@ -16,13 +16,10 @@ def getEnv(name, default=""):
 
 def makeTimer(name, cron, enable=True, arg=""):
     timer = "    - timer:\n"
-    timer += "        name: " + name + "\n"
+    timer += f"        name: {name}" + "\n"
     timer += "        parameters:\n"
     timer += "          cronExpression: \"" + cron + "\"\n"
-    if enable:
-        timer += "          enable: true\n"
-    else:
-        timer += "          enable: false\n"
+    timer += "          enable: true\n" if enable else "          enable: false\n"
     if len(arg) > 0:
         timer += "          argument: \"" + arg + "\"\n"
     return timer
@@ -98,27 +95,28 @@ try:
             if trigger.get("Type", "") == "timer":
                 TriggerName = trigger.get("TriggerName")
                 if TriggerName in mytriggers:
-                    if trigger.get("Enable") == 1:
-                        mytriggers[TriggerName]['enable'] = True
-                    else:
-                        mytriggers[TriggerName]['enable'] = False
-        for key in mytriggers:
-            f.write(makeTimer(
-                key, mytriggers[key]["cron"], mytriggers[key]["enable"], mytriggers[key]["arg"]))
+                    mytriggers[TriggerName]['enable'] = trigger.get("Enable") == 1
+        for key, value in mytriggers.items():
+            f.write(
+                makeTimer(
+                    key,
+                    value["cron"],
+                    mytriggers[key]["enable"],
+                    mytriggers[key]["arg"],
+                )
+            )
 
         f.write("  environment:\n")
         f.write("    variables:\n")
 
-        vars = {}
-        for env in envs:
-            vars[env['Key']] = env['Value']
+        vars = {env['Key']: env['Value'] for env in envs}
         vars['TENCENT_SECRET_ID'] = getEnv("TENCENT_SECRET_ID")
         vars['TENCENT_SECRET_KEY'] = getEnv("TENCENT_SECRET_KEY")
         if 'SONG_NUMBER' not in vars:
             vars['SONG_NUMBER'] = '-1'
 
-        for key in vars:
-            f.write("      " + key + ': ' + vars[key] + "\n")
+        for key, value_ in vars.items():
+            f.write(f"      {key}: {value_}" + "\n")
 
 
 except TencentCloudSDKException as err:

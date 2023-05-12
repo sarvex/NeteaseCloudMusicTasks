@@ -9,18 +9,19 @@ if __name__ == "__main__":
     dependencies = '/ql/repo/chen310_NeteaseCloudMusicTasks/requirements.txt'
     if os.path.exists(scripts_config):
         print('备份配置文件...')
-        os.system('cp -f {} {}'.format(scripts_config, old_config))
+        os.system(f'cp -f {scripts_config} {old_config}')
         print('复制配置示例文件...')
-        os.system('cp -f {} {}'.format(repo_config, example_config))
+        os.system(f'cp -f {repo_config} {example_config}')
         print('更新配置文件...')
-        os.system('python3 /ql/scripts/chen310_NeteaseCloudMusicTasks/serverless/loadconfig.py {} {} {}'.format(
-            repo_config, scripts_config, scripts_config))
+        os.system(
+            f'python3 /ql/scripts/chen310_NeteaseCloudMusicTasks/serverless/loadconfig.py {repo_config} {scripts_config} {scripts_config}'
+        )
         print('更新完成')
     else:
         print('复制配置文件')
-        os.system('cp {} {}'.format(repo_config, scripts_config))
+        os.system(f'cp {repo_config} {scripts_config}')
         print('复制配置示例文件...')
-        os.system('cp -f {} {}'.format(repo_config, example_config))
+        os.system(f'cp -f {repo_config} {example_config}')
 
     try:
         import requests
@@ -31,4 +32,4 @@ if __name__ == "__main__":
         os.system('apk update')
         os.system('apk upgrade')
         os.system('apk add gcc libc-dev')
-        os.system('pip3 install -r {}'.format(dependencies))
+        os.system(f'pip3 install -r {dependencies}')
